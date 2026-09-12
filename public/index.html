@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>今日の運試しルーレット</title>
+  <style>
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #1e1e2e; color: #fff; text-align: center; padding: 20px; }
+    .card { max-width: 400px; margin: 40px auto; background: #2b2b3d; padding: 30px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .roulette-box { width: 200px; height: 200px; margin: 20px auto; border-radius: 50%; border: 8px solid #ff007a; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: bold; background: #181825; color: #ff007a; transition: transform 0.1s; }
+    button { background: #5865F2; color: white; border: none; padding: 12px 28px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+    button:hover { background: #4752C4; }
+    button:disabled { background: #555; cursor: not-allowed; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>今日の運試しルーレット 🎲</h2>
+    <div id="user-info"></div>
+
+    <div id="auth-section" class="hidden">
+      <p>初回のみ Discord ログインが必要です。</p>
+      <button onclick="location.href='/auth/discord'">Discord でログイン</button>
+    </div>
+
+    <div id="game-section" class="hidden">
+      <div id="roulette" class="roulette-box">?</div>
+      <button id="stop-btn" onclick="stopRoulette()">STOP!</button>
+      <p id="result-msg" style="margin-top:20px; font-weight:bold;"></p>
+    </div>
+  </div>
+
+  <script>
+    let intervalId = null;
+    let isSpinning = false;
+
+    async function init() {
+      try {
+        const res = await fetch('/api/user-status');
+        if (res.status === 401) {
+          document.getElementById('auth-section').classList.remove('hidden');
+          return;
+        }
+        const data = await res.json();
+        document.getElementById('user-info').innerText = `${data.user.username} さん (現在の累計: ${data.points} pt)`;
+
+        if (data.hasPlayedToday) {
+          document.getElementById('game-section').classList.remove('hidden');
+          document.getElementById('stop-btn').disabled = true;
+          document.getElementById('result-msg').innerText = "本日はすでに運試し済みです！明日また挑戦してね。";
+        } else {
+          document.getElementById('game-section').classList.remove('hidden');
+          startSpin();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function startSpin() {
+      isSpinning = true;
+      const values = [1, 2, 3];
+      let idx = 0;
+      intervalId = setInterval(() => {
+        document.getElementById('roulette').innerText = values[idx % values.length];
+        idx++;
+      }, 80);
+    }
+
+    async function stopRoulette() {
+      if (!isSpinning) return;
+      isSpinning = false;
+      document.getElementById('stop-btn').disabled = true;
+
+      try {
+        const res = await fetch('/api/play-roulette', { method: 'POST' });
+        const data = await res.json();
+
+        clearInterval(intervalId);
+
+        if (res.ok) {
+          document.getElementById('roulette').innerText = data.point;
+          document.getElementById('result-msg').innerText = `🎉 🎉 ${data.point} ポイントを獲得しました！`;
+        } else {
+          document.getElementById('result-msg').innerText = data.error || "エラーが発生しました";
+        }
+      } catch (err) {
+        clearInterval(intervalId);
+        document.getElementById('result-msg').innerText = "通信エラーが発生しました。";
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
