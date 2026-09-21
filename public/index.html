@@ -11,6 +11,9 @@
     button { background: #5865F2; color: white; border: none; padding: 12px 28px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
     button:hover { background: #4752C4; }
     button:disabled { background: #555; cursor: not-allowed; }
+    .close-btn { background: #e06c75; margin-top: 20px; }
+    .close-btn:hover { background: #c6535c; }
+    .notice-text { font-size: 13px; color: #aaa; margin-bottom: 12px; }
     .hidden { display: none; }
   </style>
 </head>
@@ -27,8 +30,10 @@
 
     <div id="game-section" class="hidden">
       <div id="roulette" class="roulette-box">?</div>
+      <p id="notice-msg" class="notice-text">※数字が回転し始めてからSTOPを1回押してください</p>
       <button id="stop-btn" onclick="stopRoulette()">STOP!</button>
       <p id="result-msg" style="margin-top:20px; font-weight:bold;"></p>
+      <button id="close-btn" class="close-btn hidden" onclick="window.close()">このページを閉じる</button>
     </div>
   </div>
 
@@ -44,12 +49,16 @@
           return;
         }
         const data = await res.json();
-        document.getElementById('user-info').innerText = `${data.user.username} さん (現在の累計: ${data.points} pt)`;
+        // 修正①：表記の変更
+        document.getElementById('user-info').innerText = `${data.user.username} さん (現在のルーレットポイント合計: ${data.points} pt)`;
 
         if (data.hasPlayedToday) {
           document.getElementById('game-section').classList.remove('hidden');
           document.getElementById('stop-btn').disabled = true;
+          document.getElementById('notice-msg').classList.add('hidden');
           document.getElementById('result-msg').innerText = "本日はすでに運試し済みです！明日また挑戦してね。";
+          // 修正③：すでにプレイ済みの場合は閉じるボタンを表示
+          document.getElementById('close-btn').classList.remove('hidden');
         } else {
           document.getElementById('game-section').classList.remove('hidden');
           startSpin();
@@ -89,6 +98,9 @@
       } catch (err) {
         clearInterval(intervalId);
         document.getElementById('result-msg').innerText = "通信エラーが発生しました。";
+      } finally {
+        // 修正③：結果決定後に「このページを閉じる」ボタンを表示
+        document.getElementById('close-btn').classList.remove('hidden');
       }
     }
 
