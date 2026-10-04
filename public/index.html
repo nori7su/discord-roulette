@@ -49,7 +49,6 @@
           return;
         }
         const data = await res.json();
-        // 修正①：表記の変更
         document.getElementById('user-info').innerText = `${data.user.username} さん (現在のルーレットポイント合計: ${data.points} pt)`;
 
         if (data.hasPlayedToday) {
@@ -57,7 +56,6 @@
           document.getElementById('stop-btn').disabled = true;
           document.getElementById('notice-msg').classList.add('hidden');
           document.getElementById('result-msg').innerText = "本日はすでに運試し済みです！明日また挑戦してね。";
-          // 修正③：すでにプレイ済みの場合は閉じるボタンを表示
           document.getElementById('close-btn').classList.remove('hidden');
         } else {
           document.getElementById('game-section').classList.remove('hidden');
@@ -87,19 +85,22 @@
         const res = await fetch('/api/play-roulette', { method: 'POST' });
         const data = await res.json();
 
-        clearInterval(intervalId);
+        // STOPから2秒後に結果を確定して停止
+        setTimeout(() => {
+          clearInterval(intervalId);
 
-        if (res.ok) {
-          document.getElementById('roulette').innerText = data.point;
-          document.getElementById('result-msg').innerText = `🎉 🎉 ${data.point} ポイントを獲得しました！`;
-        } else {
-          document.getElementById('result-msg').innerText = data.error || "エラーが発生しました";
-        }
+          if (res.ok) {
+            document.getElementById('roulette').innerText = data.point;
+            document.getElementById('result-msg').innerText = `🎉 🎉 ${data.point} ポイントを獲得しました！`;
+          } else {
+            document.getElementById('result-msg').innerText = data.error || "エラーが発生しました";
+          }
+          document.getElementById('close-btn').classList.remove('hidden');
+        }, 2000);
+
       } catch (err) {
         clearInterval(intervalId);
         document.getElementById('result-msg').innerText = "通信エラーが発生しました。";
-      } finally {
-        // 修正③：結果決定後に「このページを閉じる」ボタンを表示
         document.getElementById('close-btn').classList.remove('hidden');
       }
     }
