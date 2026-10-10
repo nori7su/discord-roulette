@@ -85,7 +85,7 @@
         const res = await fetch('/api/play-roulette', { method: 'POST' });
         const data = await res.json();
 
-        // STOPから2秒後に結果を確定して停止
+        // STOPボタンを押してから約1.5秒後に回転を止めて結果を表示
         setTimeout(() => {
           clearInterval(intervalId);
 
@@ -96,7 +96,7 @@
             document.getElementById('result-msg').innerText = data.error || "エラーが発生しました";
           }
           document.getElementById('close-btn').classList.remove('hidden');
-        }, 2000);
+        }, 1500);
 
       } catch (err) {
         clearInterval(intervalId);
